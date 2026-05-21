@@ -6,22 +6,24 @@ const router = express.Router();
 
 // ─── GET /api/cars ─────────────────────────────────────────────
 // Public — get all cars with optional search + filter
+// routes/cars.js — GET /api/cars
 router.get("/", async (req, res) => {
     try {
-        const { search, type } = req.query;
+        const { search, type, sort } = req.query;
         const filter = {};
 
-        // Search by car name using $regex (case-insensitive)
-        if (search) {
-            filter.carName = { $regex: search, $options: "i" };
-        }
+        if (search) filter.car_name = { $regex: search, $options: "i" };
+        if (type) filter.car_type = { $in: [type] };
 
-        // Filter by car type using $in operator
-        if (type) {
-            filter.carType = { $in: [type] };
-        }
+        const sortMap = {
+            price_asc: { daily_rent_price: 1 },
+            price_desc: { daily_rent_price: -1 },
+            newest: { createdAt: -1 },
+            popular: { booking_count: -1 },
+        };
+        const sortQuery = sortMap[sort] || { daily_rent_price: 1 };
 
-        const cars = await Car.find(filter).sort({ createdAt: -1 });
+        const cars = await Car.find(filter).sort(sortQuery);
         res.json(cars);
     } catch (err) {
         res.status(500).json({ message: err.message });
