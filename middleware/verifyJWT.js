@@ -1,19 +1,25 @@
-import jwt from "jsonwebtoken";
+import { auth } from "../lib/auth.js";
+import { fromNodeHeaders } from "better-auth/node";
 
-const verifyJWT = (req, res, next) => {
-    // Read token from HTTPOnly cookie
-    const token = req.cookies?.token;
-
-    if (!token) {
-        return res.status(401).json({ message: "Unauthorized — no token found" });
-    }
-
+const verifyJWT = async (req, res, next) => {
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded; // { email, name, iat, exp }
+        const session = await auth.api.getSession({
+            headers: fromNodeHeaders(req.headers),
+        });
+
+        if (!session) {
+            return res.status(401).json({ message: "Unauthorized — please log in" });
+        }
+
+        req.user = {
+            email: session.user.email,
+            name: session.user.name,
+            id: session.user.id,
+        };
+
         next();
     } catch (err) {
-        return res.status(403).json({ message: "Forbidden — invalid or expired token" });
+        return res.status(401).json({ message: "Unauthorized — invalid session" });
     }
 };
 
