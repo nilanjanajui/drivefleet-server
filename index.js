@@ -29,8 +29,8 @@ app.use(
     })
 );
 
-// ─── BETTER AUTH ROUTES (FIXED) ──────────────────────────────
-app.all("/api/auth/:path", toNodeHandler(auth));
+// ✅ FIX — change to Express 5 wildcard
+app.all("/api/auth/{*path}", toNodeHandler(auth));
 
 // ─── YOUR ROUTES ─────────────────────────────────────────────
 app.use("/api/cars", carRoutes);
