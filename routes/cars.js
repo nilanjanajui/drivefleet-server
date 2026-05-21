@@ -85,7 +85,7 @@ router.put("/:id", verifyJWT, async (req, res) => {
         const updatedCar = await Car.findByIdAndUpdate(
             req.params.id,
             { $set: updateData },
-            { new: true, runValidators: true }
+            { new: true, runValidators: false }
         );
         res.json(updatedCar);
     } catch (err) {
