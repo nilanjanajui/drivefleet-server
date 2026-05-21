@@ -5,7 +5,8 @@ import verifyJWT from "../middleware/verifyJWT.js";
 
 const router = express.Router();
 
-// GET my bookings (private)
+// ─── GET /api/bookings/my ──────────────────────────────────────
+// Private — get all bookings for the logged-in user
 router.get("/my", verifyJWT, async (req, res) => {
     try {
         const bookings = await Booking.find({ userEmail: req.user.email }).sort({
@@ -17,37 +18,69 @@ router.get("/my", verifyJWT, async (req, res) => {
     }
 });
 
-// POST book a car (private)
+// ─── POST /api/bookings ────────────────────────────────────────
+// Private — book a car + increment booking_count using $inc
 router.post("/", verifyJWT, async (req, res) => {
     try {
-        const booking = new Booking({
-            ...req.body,
-            userEmail: req.user.email,
-            userName: req.user.name,
-        });
-        await booking.save();
+        const { carId, driverNeeded, specialNote, bookingDate } = req.body;
 
-        // Increment booking_count using $inc
-        await Car.findByIdAndUpdate(req.body.carId, {
+        // Fetch the car to get its details
+        const car = await Car.findById(carId);
+        if (!car) {
+            return res.status(404).json({ message: "Car not found" });
+        }
+
+        if (!car.availability) {
+            return res.status(400).json({ message: "Car is currently unavailable" });
+        }
+
+        // Create the booking
+        const booking = new Booking({
+            carId: car._id,
+            carName: car.carName,
+            carImage: car.imageURL,
+            carType: car.carType,
+            dailyRentPrice: car.dailyRentPrice,
+            pickupLocation: car.pickupLocation,
+            userEmail: req.user.email,   // from JWT, never from body
+            userName: req.user.name,
+            driverNeeded: driverNeeded || false,
+            specialNote: specialNote || "",
+            bookingDate: bookingDate ? new Date(bookingDate) : new Date(),
+            totalPrice: car.dailyRentPrice, // 1 day default; can extend later
+        });
+
+        const savedBooking = await booking.save();
+
+        // Increment booking_count on the car using $inc
+        await Car.findByIdAndUpdate(carId, {
             $inc: { booking_count: 1 },
         });
 
-        res.status(201).json(booking);
+        res.status(201).json(savedBooking);
     } catch (err) {
         res.status(400).json({ message: err.message });
     }
 });
 
-// DELETE cancel booking (private)
+// ─── DELETE /api/bookings/:id ──────────────────────────────────
+// Private — cancel a booking (user only)
 router.delete("/:id", verifyJWT, async (req, res) => {
     try {
         const booking = await Booking.findById(req.params.id);
-        if (!booking) return res.status(404).json({ message: "Booking not found" });
-        if (booking.userEmail !== req.user.email)
-            return res.status(403).json({ message: "Forbidden" });
+
+        if (!booking) {
+            return res.status(404).json({ message: "Booking not found" });
+        }
+
+        // Only the person who booked can cancel
+        if (booking.userEmail !== req.user.email) {
+            return res.status(403).json({ message: "Forbidden — not your booking" });
+        }
 
         await Booking.findByIdAndDelete(req.params.id);
-        res.json({ message: "Booking cancelled" });
+
+        res.json({ success: true, message: "Booking cancelled successfully" });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
