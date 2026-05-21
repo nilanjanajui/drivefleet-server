@@ -30,7 +30,7 @@ app.use(
 );
 
 // ─── BETTER AUTH ROUTES (FIXED) ──────────────────────────────
-app.all("/api/auth/:path*", toNodeHandler(auth));
+app.all("/api/auth/:path", toNodeHandler(auth));
 
 // ─── YOUR ROUTES ─────────────────────────────────────────────
 app.use("/api/cars", carRoutes);
