@@ -14,7 +14,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ─── CORS ──────────────────────────────────────────────────────
+// ─── CORE MIDDLEWARE (must be FIRST) ─────────────────────────
+app.use(express.json());
+app.use(cookieParser());
+
+// ─── CORS ─────────────────────────────────────────────────────
 app.use(
     cors({
         origin: [
@@ -25,21 +29,19 @@ app.use(
     })
 );
 
-app.all("/api/auth/{*path}", toNodeHandler(auth));
+// ─── BETTER AUTH ROUTES (FIXED) ──────────────────────────────
+app.all("/api/auth/*", toNodeHandler(auth));
 
-// ─── Other middleware ──────────────────────────────────────────
-app.use(express.json());
-app.use(cookieParser());
-
-// ─── Your routes ──────────────────────────────────────────────
+// ─── YOUR ROUTES ─────────────────────────────────────────────
 app.use("/api/cars", carRoutes);
 app.use("/api/bookings", bookingRoutes);
 
+// ─── HEALTH CHECK ────────────────────────────────────────────
 app.get("/", (req, res) => {
     res.json({ message: "DriveFleet Server running ✅" });
 });
 
-// ─── Connect DB ────────────────────────────────────────────────
+// ─── DATABASE ────────────────────────────────────────────────
 mongoose
     .connect(process.env.MONGODB_URI)
     .then(() => {
