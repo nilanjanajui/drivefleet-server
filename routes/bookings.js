@@ -37,17 +37,17 @@ router.post("/", verifyJWT, async (req, res) => {
         // Create the booking
         const booking = new Booking({
             carId: car._id,
-            carName: car.carName,
-            carImage: car.imageURL,
-            carType: car.carType,
-            dailyRentPrice: car.dailyRentPrice,
-            pickupLocation: car.pickupLocation,
-            userEmail: req.user.email,   // from JWT, never from body
+            carName: car.car_name, 
+            carImage: car.image_url,         
+            carType: car.car_type,        
+            dailyRentPrice: car.daily_rent_price,  
+            pickupLocation: car.pickup_location,   
+            userEmail: req.user.email,
             userName: req.user.name,
             driverNeeded: driverNeeded || false,
             specialNote: specialNote || "",
             bookingDate: bookingDate ? new Date(bookingDate) : new Date(),
-            totalPrice: car.dailyRentPrice, // 1 day default; can extend later
+            totalPrice: car.daily_rent_price,      // ← was car.dailyRentPrice
         });
 
         const savedBooking = await booking.save();

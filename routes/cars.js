@@ -5,8 +5,7 @@ import verifyJWT from "../middleware/verifyJWT.js";
 const router = express.Router();
 
 // ─── GET /api/cars ─────────────────────────────────────────────
-// Public — get all cars with optional search + filter
-// routes/cars.js — GET /api/cars
+// Public — get all cars with optional search + filter + sort
 router.get("/", async (req, res) => {
     try {
         const { search, type, sort } = req.query;
@@ -31,13 +30,11 @@ router.get("/", async (req, res) => {
 });
 
 // ─── GET /api/cars/my-cars ─────────────────────────────────────
-// Private — get only the logged-in user's cars
-// NOTE: must be before /:id route so it doesn't get caught
+// Private — must be before /:id or Express will treat "my-cars" as an id
 router.get("/my-cars", verifyJWT, async (req, res) => {
     try {
-        const cars = await Car.find({ ownerEmail: req.user.email }).sort({
-            createdAt: -1,
-        });
+        const cars = await Car.find({ owner_email: req.user.email })
+            .sort({ createdAt: -1 });
         res.json(cars);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -49,9 +46,7 @@ router.get("/my-cars", verifyJWT, async (req, res) => {
 router.get("/:id", async (req, res) => {
     try {
         const car = await Car.findById(req.params.id);
-        if (!car) {
-            return res.status(404).json({ message: "Car not found" });
-        }
+        if (!car) return res.status(404).json({ message: "Car not found" });
         res.json(car);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -64,10 +59,9 @@ router.post("/", verifyJWT, async (req, res) => {
     try {
         const car = new Car({
             ...req.body,
-            ownerEmail: req.user.email, // taken from JWT, not request body
-            ownerName: req.user.name,
+            owner_email: req.user.email,
+            owner_name: req.user.name,
         });
-
         const savedCar = await car.save();
         res.status(201).json(savedCar);
     } catch (err) {
@@ -80,25 +74,19 @@ router.post("/", verifyJWT, async (req, res) => {
 router.put("/:id", verifyJWT, async (req, res) => {
     try {
         const car = await Car.findById(req.params.id);
+        if (!car) return res.status(404).json({ message: "Car not found" });
 
-        if (!car) {
-            return res.status(404).json({ message: "Car not found" });
-        }
-
-        // Only owner can update
-        if (car.ownerEmail !== req.user.email) {
+        if (car.owner_email !== req.user.email)
             return res.status(403).json({ message: "Forbidden — not your car" });
-        }
 
-        // Prevent overwriting ownerEmail via body
-        const { ownerEmail, ownerName, booking_count, ...updateData } = req.body;
+        // Prevent overwriting protected fields via body
+        const { owner_email, owner_name, booking_count, ...updateData } = req.body;
 
         const updatedCar = await Car.findByIdAndUpdate(
             req.params.id,
             { $set: updateData },
             { new: true, runValidators: true }
         );
-
         res.json(updatedCar);
     } catch (err) {
         res.status(400).json({ message: err.message });
@@ -110,15 +98,10 @@ router.put("/:id", verifyJWT, async (req, res) => {
 router.delete("/:id", verifyJWT, async (req, res) => {
     try {
         const car = await Car.findById(req.params.id);
+        if (!car) return res.status(404).json({ message: "Car not found" });
 
-        if (!car) {
-            return res.status(404).json({ message: "Car not found" });
-        }
-
-        // Only owner can delete
-        if (car.ownerEmail !== req.user.email) {
+        if (car.owner_email !== req.user.email)
             return res.status(403).json({ message: "Forbidden — not your car" });
-        }
 
         await Car.findByIdAndDelete(req.params.id);
         res.json({ success: true, message: "Car deleted successfully" });

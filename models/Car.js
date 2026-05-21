@@ -2,31 +2,31 @@ import mongoose from "mongoose";
 
 const carSchema = new mongoose.Schema(
     {
-        carName: {
+        car_name: {
             type: String,
             required: [true, "Car name is required"],
             trim: true,
         },
-        dailyRentPrice: {
+        daily_rent_price: {
             type: Number,
             required: [true, "Daily rent price is required"],
             min: [0, "Price cannot be negative"],
         },
-        carType: {
+        car_type: {
             type: String,
-            enum: ["SUV", "Sedan", "Hatchback", "Luxury", "Truck", "Van"],
+            enum: ["SUV", "Sedan", "Hatchback", "Luxury", "Sports Coupe", "Electric SUV", "Convertible", "Pickup Truck"],
             required: [true, "Car type is required"],
         },
-        imageURL: {
+        image_url: {
             type: String,
             required: [true, "Image URL is required"],
         },
-        seatCapacity: {
+        seat_capacity: {
             type: Number,
             required: [true, "Seat capacity is required"],
             min: 1,
         },
-        pickupLocation: {
+        pickup_location: {
             type: String,
             required: [true, "Pickup location is required"],
             trim: true,
@@ -43,20 +43,19 @@ const carSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
-        ownerEmail: {
+        owner_email: {
             type: String,
             required: [true, "Owner email is required"],
             lowercase: true,
         },
-        ownerName: {
+        owner_name: {
             type: String,
             default: "",
         },
     },
     {
-        timestamps: true, // adds createdAt and updatedAt automatically
+        timestamps: true,
     }
 );
 
-// Prevent model recompilation on hot reload
 export default mongoose.models?.Car || mongoose.model("Car", carSchema);
