@@ -6,6 +6,10 @@ import dotenv from "dotenv";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth.js";
 
+import authRoutes from "./routes/auth.js";
+
+app.use("/api/auth-token", authRoutes);
+
 import carRoutes from "./routes/cars.js";
 import bookingRoutes from "./routes/bookings.js";
 

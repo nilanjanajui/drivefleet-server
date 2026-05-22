@@ -1,20 +1,18 @@
+import express from "express";
 import jwt from "jsonwebtoken";
+import { auth } from "../lib/auth.js";
 
-// Call this after successful Better Auth login
-router.post("/api/token", async (req, res) => {
+const router = express.Router();
+
+router.post("/token", async (req, res) => {
     const session = await auth.api.getSession({ headers: req.headers });
 
     if (!session?.user) {
         return res.status(401).json({ message: "Not logged in" });
     }
 
-    // Generate JWT
     const token = jwt.sign(
-        {
-            id: session.user.id,
-            email: session.user.email,
-            name: session.user.name,
-        },
+        { id: session.user.id, email: session.user.email, name: session.user.name },
         process.env.JWT_SECRET,
         { expiresIn: "7d" }
     );
@@ -23,8 +21,10 @@ router.post("/api/token", async (req, res) => {
         httpOnly: true,
         secure: true,
         sameSite: "none",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.json({ success: true });
 });
+
+export default router;
