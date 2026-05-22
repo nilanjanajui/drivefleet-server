@@ -1,29 +1,23 @@
-import { auth } from "../lib/auth.js";
-import { toNodeHandler } from "better-auth/node";
+import jwt from "jsonwebtoken";
 
-const verifyJWT = async (req, res, next) => {
+const verifyJWT = (req, res, next) => {
+    // Read token from HTTPOnly cookie
+    const token = req.cookies?.token;
+
+    if (!token) {
+        return res.status(401).json({ message: "Unauthorized — no token" });
+    }
+
     try {
-        const session = await auth.api.getSession({
-            headers: req.headers,
-        });
-
-        if (!session?.user) {
-            return res.status(401).json({
-                message: "Unauthorized — please log in",
-            });
-        }
-
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = {
-            id: session.user.id,
-            email: session.user.email,
-            name: session.user.name,
+            id: decoded.id,
+            email: decoded.email,
+            name: decoded.name,
         };
-
         next();
     } catch (err) {
-        return res.status(401).json({
-            message: "Unauthorized — invalid session",
-        });
+        return res.status(401).json({ message: "Unauthorized — invalid token" });
     }
 };
 
