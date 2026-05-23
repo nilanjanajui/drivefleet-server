@@ -7,18 +7,15 @@ import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth.js";
 
 import authRoutes from "./routes/auth.js";
-
-app.use("/api/auth-token", authRoutes);
-
 import carRoutes from "./routes/cars.js";
 import bookingRoutes from "./routes/bookings.js";
 
 dotenv.config();
 
-const app = express();
+const app = express(); 
 const PORT = process.env.PORT || 5000;
 
-// ─── CORE MIDDLEWARE (must be FIRST) ─────────────────────────
+// ─── CORE MIDDLEWARE ──────────────────────────────────────────
 app.use(express.json());
 app.use(cookieParser());
 
@@ -33,10 +30,11 @@ app.use(
     })
 );
 
-// ✅ FIX — change to Express 5 wildcard
+// ─── BETTER AUTH ──────────────────────────────────────────────
 app.all("/api/auth/{*path}", toNodeHandler(auth));
 
 // ─── YOUR ROUTES ─────────────────────────────────────────────
+app.use("/api/auth-token", authRoutes); 
 app.use("/api/cars", carRoutes);
 app.use("/api/bookings", bookingRoutes);
 
